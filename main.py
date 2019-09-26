@@ -42,7 +42,7 @@ class App(QMainWindow):
                                     'by an output file location.')
 
         with open(sys.argv[2], 'w') as output_file:
-            for _ in range(int(sys.argv[1]) - 1):
+            for _ in range(int(sys.argv[1])):
                 output_file.write('\n')
 
         return int(sys.argv[1]), sys.argv[2]
