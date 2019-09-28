@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QRadioButton, QScrollArea, QWidget, QButtonGroup
+from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QRadioButton, QScrollArea, QWidget, QButtonGroup, QLayout
 from PyQt5.QtGui import QFont
 import sys
+import os
 
 
 class QMarkMultipleChoiceQuestion():
@@ -20,8 +21,7 @@ class App(QMainWindow):
         self.height = 520
 
         # create result file from command args
-        self.question_count, self.output_file = self.init_result_file()
-        #self.question_labels = [QLabel(self) for _ in range(self.question_count)]
+        self.question_count, self.output_file, self.starting_answers = self.init_result_file()
         self.choice_count = 4
         self.question_label_x = 20
         self.question_label_y = 20
@@ -35,38 +35,6 @@ class App(QMainWindow):
         self.questions = []
 
         self.init_ui()
-
-    @staticmethod
-    def init_result_file():
-        assert len(sys.argv) == 3, ('Wrong number of arguments given. Specify an integer number of questions followed'
-                                    'by an output file location.')
-
-        with open(sys.argv[2], 'w') as output_file:
-            for _ in range(int(sys.argv[1])):
-                output_file.write('\n')
-
-        return int(sys.argv[1]), sys.argv[2]
-
-    def init_questions(self):
-        result = []
-        for q_num in range(self.question_count):
-            label = QLabel(self.central_widget)
-            label.setText('Question ' + str(q_num+1))
-            label.move(self.question_label_x, self.question_label_y + (q_num * self.question_offset))
-            label.setFont(QFont('Ariel', 15))
-
-            choice_group = QButtonGroup(self.central_widget)
-            choices = [QRadioButton(self.central_widget) for _ in range(self.choice_count)]
-
-            for (i, choice) in enumerate(choices):
-                choice.toggled.connect(self.select_answer)
-                choice.move(self.choices_x + (i * self.choice_spacing), self.choices_y + (q_num * self.question_offset))
-                choice.setText(chr(65+i))
-                choice_group.addButton(choice)
-
-            result.append(QMarkMultipleChoiceQuestion(label, choice_group, q_num))
-
-        return result
 
     def init_ui(self):
         self.setWindowTitle(self.title)
@@ -87,6 +55,32 @@ class App(QMainWindow):
 
         self.show()
 
+    def init_questions(self):
+        result = []
+        for q_num in range(self.question_count):
+            loaded_answer = self.starting_answers[q_num][0]
+            label = QLabel(self.central_widget)
+            label.setText('Question ' + str(q_num+1))
+            label.move(self.question_label_x, self.question_label_y + (q_num * self.question_offset))
+            label.setFont(QFont('Ariel', 15))
+
+            choice_group = QButtonGroup(self.central_widget)
+            choices = [QRadioButton(self.central_widget) for _ in range(self.choice_count)]
+
+            for (i, choice) in enumerate(choices):
+                choice.toggled.connect(self.select_answer)
+                choice.move(self.choices_x + (i * self.choice_spacing), self.choices_y + (q_num * self.question_offset))
+                choice.setText(chr(65+i))
+
+                if chr(65+i) == loaded_answer:
+                    choice.setChecked(True)
+
+                choice_group.addButton(choice)
+
+            result.append(QMarkMultipleChoiceQuestion(label, choice_group, q_num))
+
+        return result
+
     def select_answer(self):
         answer_button = self.sender()
 
@@ -99,6 +93,24 @@ class App(QMainWindow):
 
                 with open(self.output_file, 'w') as output_file:
                     output_file.writelines(file_contents)
+
+    @staticmethod
+    def init_result_file():
+        assert len(sys.argv) == 3, ('Wrong number of arguments given. Specify an integer number of questions followed'
+                                    'by an output file location.')
+
+        # if the output file already exists load the answers
+        starting_answers = []
+        if os.path.isfile(sys.argv[2]):
+            print('file exists')
+            with open(sys.argv[2]) as output_file:
+                starting_answers = output_file.readlines()
+        else:
+            with open(sys.argv[2], 'w') as output_file:
+                for _ in range(int(sys.argv[1])):
+                    output_file.write('\n')
+
+        return int(sys.argv[1]), sys.argv[2], starting_answers
 
 
 if __name__ == '__main__':
