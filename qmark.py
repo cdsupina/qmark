@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QRadioButton, QScrollArea, QWidget, QButtonGroup, QLayout
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIcon
 import sys
 import os
 
@@ -22,7 +22,7 @@ class App(QMainWindow):
 
         # create result file from command args
         self.question_count, self.output_file, self.starting_answers = self.init_result_file()
-        self.choice_count = 4
+        self.choice_count = 5
         self.question_label_x = 20
         self.question_label_y = 20
         self.question_offset = 100
@@ -39,6 +39,8 @@ class App(QMainWindow):
     def init_ui(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
+        self.setFixedSize(self.width, self.height)
+        self.setWindowIcon(QIcon('qmark_logo.png'))
 
         self.central_widget = QWidget(self)
 
@@ -63,6 +65,10 @@ class App(QMainWindow):
             label.setText('Question ' + str(q_num+1))
             label.move(self.question_label_x, self.question_label_y + (q_num * self.question_offset))
             label.setFont(QFont('Ariel', 15))
+            if loaded_answer != '\n':
+                label.setStyleSheet('background-color:#8affa3')
+            else:
+                label.setStyleSheet('background-color:#ff6262')
 
             choice_group = QButtonGroup(self.central_widget)
             choices = [QRadioButton(self.central_widget) for _ in range(self.choice_count)]
@@ -89,10 +95,16 @@ class App(QMainWindow):
                 with open(self.output_file) as output_file:
                     file_contents = output_file.readlines()
 
-                file_contents[question.idx] = answer_button.text() + '\n'
+                # the following 3 lines fix '&' on first line quirk with linux
+                text = answer_button.text() + '\n'
+                while text.startswith('&'):
+                    text = text[1:]
+                file_contents[question.idx] = text
 
                 with open(self.output_file, 'w') as output_file:
                     output_file.writelines(file_contents)
+
+                question.label.setStyleSheet('background-color:#8affa3')
 
     @staticmethod
     def init_result_file():
@@ -102,9 +114,25 @@ class App(QMainWindow):
         # if the output file already exists load the answers
         starting_answers = []
         if os.path.isfile(sys.argv[2]):
-            print('file exists')
             with open(sys.argv[2]) as output_file:
                 starting_answers = output_file.readlines()
+
+            if len(starting_answers) < int(sys.argv[1]):
+                print('Existing file ' + sys.argv[2] + ' contains fewer than ' + sys.argv[1]
+                      + ' answers. Adding newlines(\'\\n\') to close the difference.')
+                for _ in range(int(sys.argv[1]) - len(starting_answers)):
+                    starting_answers.append('\n')
+                with open(sys.argv[2], 'w') as output_file:
+                    output_file.writelines(starting_answers)
+
+            if len(starting_answers) > int(sys.argv[1]):
+                print('Existing file ' + sys.argv[2] + ' contains greater than ' + sys.argv[1]
+                      + ' answers. Removing lines to close the difference.')
+                for _ in range(len(starting_answers) - int(sys.argv[1])):
+                    starting_answers = starting_answers[:-1]
+                with open(sys.argv[2], 'w') as output_file:
+                    output_file.writelines(starting_answers)
+
         else:
             with open(sys.argv[2], 'w') as output_file:
                 for _ in range(int(sys.argv[1])):
