@@ -129,7 +129,9 @@ class App(QMainWindow):
                 with open(self.output_file, 'w') as output_file:
                     output_file.writelines(file_contents)
 
-                question.label.setStyleSheet('background-color:#8affa3')
+                # change highlighting to green if question not marked for review
+                if not question.review.isChecked():
+                    question.label.setStyleSheet('background-color:#8affa3')
 
     def toggle_review(self):
         review_checkbox = self.sender()
