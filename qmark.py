@@ -75,6 +75,8 @@ class App(QMainWindow):
         for q_num in range(self.question_count):
             if self.starting_answers:
                 loaded_answer = self.starting_answers[q_num][0]
+            else:
+                loaded_answer = '\n'
             label = QLabel(self.central_widget)
             label.setText('Question ' + str(q_num+1))
             ypos = self.question_label_y + (q_num * self.question_offset)
