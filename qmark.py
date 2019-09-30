@@ -73,6 +73,7 @@ class App(QMainWindow):
         result = []
         ypos = 0
         for q_num in range(self.question_count):
+            loaded_answer = None
             if self.starting_answers:
                 loaded_answer = self.starting_answers[q_num][0]
             label = QLabel(self.central_widget)
