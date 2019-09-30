@@ -88,7 +88,7 @@ class App(QMainWindow):
                 label.setStyleSheet('background-color:#ff6262')
 
             review = QCheckBox(self.central_widget)
-            review.setText('Review')
+            review.setText('Review Reminder')
             review.move(self.question_review_x, ypos)
             review.toggled.connect(self.toggle_review)
 
