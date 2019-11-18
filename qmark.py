@@ -67,6 +67,13 @@ class App(QMainWindow):
         self.scroll_area.setGeometry(0, 0, self.width, self.height)
         self.scroll_area.setWidget(self.central_widget)
 
+        # update review checkboxes
+        with open(self.output_file, 'r') as output_file:
+            file_contents = output_file.readlines()
+            for (q, line) in zip(self.questions, file_contents):
+                if len(line) == 3:
+                    q.review.setChecked(True)
+
         self.show()
 
     def init_questions(self):
@@ -110,6 +117,9 @@ class App(QMainWindow):
         self.submit.move(self.submit_button_x, ypos + self.submit_button_y_offset)
         self.credits.move(self.credits_x, ypos + self.credits_y_offset)
 
+
+
+
         return result
 
     def select_answer(self):
@@ -120,8 +130,12 @@ class App(QMainWindow):
                 with open(self.output_file) as output_file:
                     file_contents = output_file.readlines()
 
-                # the following 3 lines fix '&' on first line quirk with linux
-                text = answer_button.text() + '\n'
+                if question.review.isChecked():
+                    text = answer_button.text() + 'r\n'
+                else:
+                    text = answer_button.text() + '\n'
+
+                # the following 2 lines fix '&' on first line quirk with linux
                 while text.startswith('&'):
                     text = text[1:]
                 file_contents[question.idx] = text
@@ -145,6 +159,34 @@ class App(QMainWindow):
                     for answer_button in question.choices.buttons():
                         if answer_button.isChecked():
                             question.label.setStyleSheet('background-color:#8affa3')
+
+        self.update_review()
+
+    def update_review(self):
+        updated_contents = []
+        with open(self.output_file, 'r') as output_file:
+            file_contents = output_file.readlines()
+            for (q, line) in zip(self.questions, file_contents):
+                if q.review.isChecked():
+                    # question is unanswered
+                    if len(line) == 1:
+                        updated_contents.append(' r\n')
+                    #  question was answered
+                    elif len(line) == 2:
+                        updated_contents.append(file_contents[q.idx][0] + 'r\n')
+                    #  question was answered and marked for review
+                    elif len(line) == 3:
+                        updated_contents.append(file_contents[q.idx])
+                else:
+                    if len(line) == 3:
+                        if line[0] == ' ':
+                            updated_contents.append('\n')
+                        else:
+                            updated_contents.append(file_contents[q.idx][0] + '\n')
+                    else:
+                        updated_contents.append(file_contents[q.idx])
+        with open(self.output_file, 'w') as output_file:
+            output_file.writelines(updated_contents)
 
     @staticmethod
     def init_result_file():
